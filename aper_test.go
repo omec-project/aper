@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/free5gc/aper/logger"
+	"github.com/omec-project/aper/logger"
 )
 
 var perTestTraceLevel = 2

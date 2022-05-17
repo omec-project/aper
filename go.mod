@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-module github.com/free5gc/aper
+module github.com/omec-project/aper
 
 go 1.14
 
