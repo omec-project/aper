@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"runtime"
 
-	"github.com/free5gc/aper/logger"
+	"github.com/omec-project/aper/logger"
 )
 
 type perBitData struct {
