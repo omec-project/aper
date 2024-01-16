@@ -450,7 +450,7 @@ var intTest2Data = []intTest2{
 	{3},
 }
 
-//  2 <= bmax-bmin <= 255
+// 2 <= bmax-bmin <= 255
 type intTest3 struct {
 	Value int64 `aper:"valueLB:1,valueUB:110"`
 }
@@ -462,7 +462,7 @@ var intTest3Data = []intTest3{
 	{110},
 }
 
-//  bmax-bmin == 256
+// bmax-bmin == 256
 type intTest4 struct {
 	Value int64 `aper:"valueLB:0,valueUB:255"`
 }
@@ -471,7 +471,7 @@ var intTest4Data = []intTest4{
 	{140},
 }
 
-//  257 <= bmax-bmin <= 65536
+// 257 <= bmax-bmin <= 65536
 type intTest5 struct {
 	Value int64 `aper:"valueLB:0,valueUB:65535"`
 }
@@ -480,7 +480,7 @@ var intTest5Data = []intTest5{
 	{140},
 }
 
-//  65537 <= bmax-bmin
+// 65537 <= bmax-bmin
 type intTest6 struct {
 	Value int64 `aper:"valueLB:0,valueUB:4294967295"`
 }
@@ -492,7 +492,7 @@ var intTest6Data = []intTest6{
 	{65536},
 }
 
-//  value extensed
+// value extensed
 type intTest7 struct {
 	Value int64 `aper:"valueExt,valueLB:0,valueUB:45"`
 }

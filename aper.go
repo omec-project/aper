@@ -150,7 +150,7 @@ func (pd *perBitData) parseConstraintValue(valueRange int64) (value uint64, err 
 	if valueRange <= 255 {
 		if valueRange < 0 {
 			err = fmt.Errorf("Value range is negative")
-			return
+			return value, err
 		}
 		var i uint
 		// 1 ~ 8 bits
@@ -161,17 +161,17 @@ func (pd *perBitData) parseConstraintValue(valueRange int64) (value uint64, err 
 			}
 		}
 		value, err = pd.getBitsValue(i)
-		return
+		return value, err
 	} else if valueRange == 256 {
 		bytes = 1
 	} else if valueRange <= 65536 {
 		bytes = 2
 	} else {
 		err = fmt.Errorf("Constraint Value is large than 65536")
-		return
+		return value, err
 	}
 	if err = pd.parseAlignBits(); err != nil {
-		return
+		return value, err
 	}
 	value, err = pd.getBitsValue(bytes * 8)
 	return value, err
@@ -181,17 +181,17 @@ func (pd *perBitData) parseSemiConstrainedWholeNumber(lb uint64) (value uint64, 
 	var repeat bool
 	var length uint64
 	if length, err = pd.parseLength(-1, &repeat); err != nil {
-		return
+		return value, err
 	}
 	if length > 8 || repeat {
 		err = fmt.Errorf("Too long length: %d", length)
-		return
+		return value, err
 	}
 	if value, err = pd.getBitsValue(uint(length) * 8); err != nil {
-		return
+		return value, err
 	}
 	value += lb
-	return
+	return value, err
 }
 
 func (pd *perBitData) parseNormallySmallNonNegativeWholeNumber() (value uint64, err error) {
@@ -218,27 +218,27 @@ func (pd *perBitData) parseLength(sizeRange int64, repeat *bool) (value uint64, 
 	}
 
 	if err = pd.parseAlignBits(); err != nil {
-		return
+		return value, err
 	}
 	firstByte, err := pd.getBitsValue(8)
 	if err != nil {
-		return
+		return value, err
 	}
 	if (firstByte & 128) == 0 { // #10.9.3.6
 		value = firstByte & 0x7F
-		return
+		return value, err
 	} else if (firstByte & 64) == 0 { // #10.9.3.7
 		var secondByte uint64
 		if secondByte, err = pd.getBitsValue(8); err != nil {
-			return
+			return value, err
 		}
 		value = ((firstByte & 63) << 8) | secondByte
-		return
+		return value, err
 	}
 	firstByte &= 63
 	if firstByte < 1 || firstByte > 4 {
 		err = fmt.Errorf("Parse Length Out of Constraint")
-		return
+		return value, err
 	}
 	*repeat = true
 	value = 16384 * firstByte
@@ -335,7 +335,8 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 }
 
 func (pd *perBitData) parseOctetString(extensed bool, lowerBoundPtr *int64, upperBoundPtr *int64) (
-	OctetString, error) {
+	OctetString, error,
+) {
 	var lb, ub, sizeRange int64 = 0, -1, -1
 	if !extensed {
 		if lowerBoundPtr != nil {
@@ -513,7 +514,8 @@ func (pd *perBitData) parseInteger(extensed bool, lowerBoundPtr *int64, upperBou
 }
 
 func (pd *perBitData) parseEnumerated(extensed bool, lowerBoundPtr *int64, upperBoundPtr *int64) (value uint64,
-	err error) {
+	err error,
+) {
 	if lowerBoundPtr == nil || upperBoundPtr == nil {
 		err = fmt.Errorf("ENUMERATED value constraint is error")
 		return
@@ -542,7 +544,8 @@ func (pd *perBitData) parseEnumerated(extensed bool, lowerBoundPtr *int64, upper
 }
 
 func (pd *perBitData) parseSequenceOf(sizeExtensed bool, params fieldParameters, sliceType reflect.Type) (
-	reflect.Value, error) {
+	reflect.Value, error,
+) {
 	var sliceContent reflect.Value
 	var lb int64 = 0
 	var sizeRange int64
@@ -908,17 +911,17 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 //
 // The following tags on struct fields have special meaning to Unmarshal:
 //
-//	optional        	OPTIONAL tag in SEQUENCE
-//	sizeExt             specifies that size  is extensible
-//	valueExt            specifies that value is extensible
-//	sizeLB		        set the minimum value of size constraint
-//	sizeUB              set the maximum value of value constraint
-//	valueLB		        set the minimum value of size constraint
-//	valueUB             set the maximum value of value constraint
-//	default             sets the default value
-//	openType            specifies the open Type
-//  referenceFieldName	the string of the reference field for this type (only if openType used)
-//  referenceFieldValue	the corresponding value of the reference field for this type (only if openType used)
+//		optional        	OPTIONAL tag in SEQUENCE
+//		sizeExt             specifies that size  is extensible
+//		valueExt            specifies that value is extensible
+//		sizeLB		        set the minimum value of size constraint
+//		sizeUB              set the maximum value of value constraint
+//		valueLB		        set the minimum value of size constraint
+//		valueUB             set the maximum value of value constraint
+//		default             sets the default value
+//		openType            specifies the open Type
+//	 referenceFieldName	the string of the reference field for this type (only if openType used)
+//	 referenceFieldValue	the corresponding value of the reference field for this type (only if openType used)
 //
 // Other ASN.1 types are not supported; if it encounters them,
 // Unmarshal returns a parse error.
