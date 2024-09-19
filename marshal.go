@@ -83,8 +83,7 @@ func (pd *perRawBitData) putBitsValue(value uint64, numBits uint) error {
 	var i int
 	for i = int(Byteslen) - 2; value > 0; i-- {
 		if i < 0 {
-			err = fmt.Errorf("Bits Value is over capacity")
-			return err
+			return fmt.Errorf("bits Value is over capacity")
 		}
 		tempBytes[i] = byte(value & 0xff)
 		value >>= 8
@@ -101,8 +100,7 @@ func (pd *perRawBitData) appendConstraintValue(valueRange int64, value uint64) e
 	var bytes uint
 	if valueRange <= 255 {
 		if valueRange < 0 {
-			err = fmt.Errorf("Value range is negative")
-			return err
+			return fmt.Errorf("value range is negative")
 		}
 		var i uint
 		// 1 ~ 8 bits
@@ -119,8 +117,7 @@ func (pd *perRawBitData) appendConstraintValue(valueRange int64, value uint64) e
 	} else if valueRange <= 65536 {
 		bytes = 2
 	} else {
-		err = fmt.Errorf("Constraint Value is large than 65536")
-		return err
+		return fmt.Errorf("constraint Value is large than 65536")
 	}
 	pd.appendAlignBits()
 	err = pd.putBitsValue(value, bytes*8)
@@ -147,7 +144,7 @@ func (pd *perRawBitData) appendNormallySmallNonNegativeValue(value uint64) error
 
 func (pd *perRawBitData) putSemiConstrainedWholeNumber(value uint64, lb uint64) error {
 	if lb > value {
-		return fmt.Errorf("Value(%d) is less than lower bound value(%d)", value, lb)
+		return fmt.Errorf("value (%d) is less than lower bound value (%d)", value, lb)
 	}
 	value -= lb
 	var length uint64 = 1
@@ -289,8 +286,7 @@ func (pd *perRawBitData) appendOctetString(bytes []byte, extensive bool, lowerBo
 			if byteLen <= uint64(ub) {
 				sizeRange = ub - lb + 1
 			} else if !extensive {
-				err := fmt.Errorf("OctetString Length is over upperbound")
-				return err
+				return fmt.Errorf("octetString Length is over upperbound")
 			}
 			if extensive {
 				perTrace(2, "Putting size Extension Value")
@@ -314,8 +310,7 @@ func (pd *perRawBitData) appendOctetString(bytes []byte, extensive bool, lowerBo
 
 	if sizeRange == 1 {
 		if byteLen != uint64(ub) {
-			err := fmt.Errorf("OctetString Length(%d) is not match fix-sized : %d", byteLen, ub)
-			return err
+			return fmt.Errorf("octetString length (%d) is not match fix-sized: %d", byteLen, ub)
 		}
 		perTrace(2, fmt.Sprintf("Encoding OCTET STRING size %d", ub))
 		if byteLen > 2 {
@@ -382,14 +377,14 @@ func (pd *perRawBitData) appendInteger(value int64, extensive bool, lowerBoundPt
 	if lowerBoundPtr != nil {
 		lb = *lowerBoundPtr
 		if value < lb {
-			return fmt.Errorf("INTEGER value is smaller than lowerbound")
+			return fmt.Errorf("integer value is smaller than lowerbound")
 		}
 		if upperBoundPtr != nil {
 			ub := *upperBoundPtr
 			if value <= ub {
 				valueRange = ub - lb + 1
 			} else if !extensive {
-				return fmt.Errorf("INTEGER value is larger than upperbound")
+				return fmt.Errorf("integer value is larger than upperbound")
 			}
 			if extensive {
 				perTrace(2, "Putting value Extension bit")
@@ -487,11 +482,11 @@ func (pd *perRawBitData) appendEnumerated(value uint64, extensive bool, lowerBou
 	upperBoundPtr *int64,
 ) error {
 	if lowerBoundPtr == nil || upperBoundPtr == nil {
-		return fmt.Errorf("ENUMERATED value constraint is error")
+		return fmt.Errorf("enumerated value constraint is error")
 	}
 	lb, ub := *lowerBoundPtr, *upperBoundPtr
 	if lb < 0 || lb > ub {
-		return fmt.Errorf("ENUMERATED value constraint is error")
+		return fmt.Errorf("enumerated value constraint is error")
 	}
 
 	if value <= uint64(ub) {
@@ -507,7 +502,7 @@ func (pd *perRawBitData) appendEnumerated(value uint64, extensive bool, lowerBou
 		}
 	} else {
 		if !extensive {
-			return fmt.Errorf("ENUMERATED value is larger than upperbound")
+			return fmt.Errorf("enumerated value is larger than upperbound")
 		}
 		if err := pd.putBitsValue(1, 1); err != nil {
 			return err
@@ -538,7 +533,7 @@ func (pd *perRawBitData) parseSequenceOf(v reflect.Value, params fieldParameters
 				sizeRange = ub - lb + 1
 			}
 		} else if numElements > ub {
-			return fmt.Errorf("SEQUENCE OF Size is larger than upperbound")
+			return fmt.Errorf("sequence of size is larger than upperbound")
 		} else {
 			sizeRange = ub - lb + 1
 		}
@@ -547,11 +542,11 @@ func (pd *perRawBitData) parseSequenceOf(v reflect.Value, params fieldParameters
 	}
 
 	if numElements < lb {
-		return fmt.Errorf("SEQUENCE OF Size is lower than lowerbound")
+		return fmt.Errorf("sequence of size is lower than lowerbound")
 	} else if sizeRange == 1 {
 		perTrace(3, fmt.Sprintf("Encoding Length of \"SEQUENCE OF\"  with fix-size %d", ub))
 		if numElements != ub {
-			return fmt.Errorf("Encoding Length %d != fix-size %d", numElements, ub)
+			return fmt.Errorf("encoding length %d != fix-size %d", numElements, ub)
 		}
 	} else if sizeRange > 0 {
 		perTrace(3, fmt.Sprintf("Encoding Length(%d) of \"SEQUENCE OF\"  with Size Range(%d..%d)", numElements, lb, ub))
@@ -580,11 +575,11 @@ func (pd *perRawBitData) appendChoiceIndex(present int, extensive bool, upperBou
 	var ub int64
 	rawChoice := present - 1
 	if upperBoundPtr == nil {
-		return fmt.Errorf("The upper bound of CHIOCE is missing")
+		return fmt.Errorf("the upper bound of CHIOCE is missing")
 	} else if ub = *upperBoundPtr; ub < 0 {
-		return fmt.Errorf("The upper bound of CHIOCE is negative")
+		return fmt.Errorf("the upper bound of CHIOCE is negative")
 	} else if extensive && rawChoice > int(ub) {
-		return fmt.Errorf("Unsupport value of CHOICE type is in Extensed")
+		return fmt.Errorf("unsupport value of CHOICE type is in Extensed")
 	}
 	perTrace(2, fmt.Sprintf("Encoding Present index of CHOICE  %d - 1", present))
 	if err := pd.appendConstraintValue(ub+1, uint64(rawChoice)); err != nil {
@@ -658,8 +653,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			params.sizeUpperBound)
 		return err
 	case ObjectIdentifierType:
-		err := fmt.Errorf("Unsupport ObjectIdenfier type")
-		return err
+		return fmt.Errorf("unsupport ObjectIdenfier type")
 	case OctetStringType:
 		err := pd.appendOctetString(v.Bytes(), params.sizeExtensible, params.sizeLowerBound, params.sizeUpperBound)
 		return err
@@ -722,12 +716,12 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		if !sequenceType {
 			present := int(v.Field(0).Int())
 			if present == 0 {
-				return fmt.Errorf("CHOICE or OpenType present is 0(present's field number)")
+				return fmt.Errorf("choice or OpenType present is 0 (present's field number)")
 			} else if present >= structType.NumField() {
-				return fmt.Errorf("Present is bigger than number of struct field")
+				return fmt.Errorf("present is bigger than number of struct field")
 			} else if params.openType {
 				if params.referenceFieldValue == nil {
-					return fmt.Errorf("OpenType reference value is empty")
+					return fmt.Errorf("openType reference value is empty")
 				}
 				refValue := *params.referenceFieldValue
 
@@ -770,7 +764,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 					}
 				}
 				if index == i {
-					return fmt.Errorf("Open type is not reference to the other field in the struct")
+					return fmt.Errorf("open type is not reference to the other field in the struct")
 				}
 				structParams[i].referenceFieldValue = new(int64)
 				if value, err := getReferenceFieldValue(val.Field(index)); err != nil {

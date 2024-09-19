@@ -20,11 +20,12 @@ type perBitData struct {
 }
 
 func perTrace(level int, s string) {
+	logger.AperLog.Debugf("perTrace level is %d", level)
 	_, file, line, ok := runtime.Caller(1)
 	if !ok {
 		logger.AperLog.Debugln(s)
 	} else {
-		logger.AperLog.Debugf("%s (%s:%d)\n", s, path.Base(file), line)
+		logger.AperLog.Debugf("%s (%s:%d)", s, path.Base(file), line)
 	}
 }
 
@@ -41,7 +42,7 @@ func perBitLog(numBits uint64, byteOffset uint64, bitsOffset uint, value interfa
 func GetBitString(srcBytes []byte, bitsOffset uint, numBits uint) (dstBytes []byte, err error) {
 	bitsLeft := uint(len(srcBytes))*8 - bitsOffset
 	if numBits > bitsLeft {
-		err = fmt.Errorf("Get bits overflow, requireBits: %d, leftBits: %d", numBits, bitsLeft)
+		err = fmt.Errorf("get bits overflow, requireBits: %d, leftBits: %d", numBits, bitsLeft)
 		return
 	}
 	byteLen := (bitsOffset + numBits + 7) >> 3
@@ -70,7 +71,7 @@ func GetBitString(srcBytes []byte, bitsOffset uint, numBits uint) (dstBytes []by
 // 	}
 // 	bitsLeft := 8 - bitsOffset
 // 	if bitsLeft < numBits {
-// 		err = fmt.Errorf("Get bits overflow, requireBits: %d, leftBits: %d", numBits, bitsLeft)
+// 		err = fmt.Errorf("get bits overflow, requireBits: %d, leftBits: %d", numBits, bitsLeft)
 // 		return
 // 	}
 // 	if bitsOffset == 0 {
@@ -135,7 +136,7 @@ func (pd *perBitData) parseAlignBits() error {
 		if val, err := pd.getBitsValue(alignBits); err != nil {
 			return err
 		} else if val != 0 {
-			return fmt.Errorf("Align Bit is not zero")
+			return fmt.Errorf("align Bit is not zero")
 		}
 	} else if pd.bitsOffset != 0 {
 		pd.bitCarry()
@@ -149,8 +150,7 @@ func (pd *perBitData) parseConstraintValue(valueRange int64) (value uint64, err 
 	var bytes uint
 	if valueRange <= 255 {
 		if valueRange < 0 {
-			err = fmt.Errorf("Value range is negative")
-			return value, err
+			return value, fmt.Errorf("value range is negative")
 		}
 		var i uint
 		// 1 ~ 8 bits
@@ -167,8 +167,7 @@ func (pd *perBitData) parseConstraintValue(valueRange int64) (value uint64, err 
 	} else if valueRange <= 65536 {
 		bytes = 2
 	} else {
-		err = fmt.Errorf("Constraint Value is large than 65536")
-		return value, err
+		return value, fmt.Errorf("constraint Value is large than 65536")
 	}
 	if err = pd.parseAlignBits(); err != nil {
 		return value, err
@@ -184,8 +183,7 @@ func (pd *perBitData) parseSemiConstrainedWholeNumber(lb uint64) (value uint64, 
 		return value, err
 	}
 	if length > 8 || repeat {
-		err = fmt.Errorf("Too long length: %d", length)
-		return value, err
+		return value, fmt.Errorf("too long length: %d", length)
 	}
 	if value, err = pd.getBitsValue(uint(length) * 8); err != nil {
 		return value, err
@@ -237,8 +235,7 @@ func (pd *perBitData) parseLength(sizeRange int64, repeat *bool) (value uint64, 
 	}
 	firstByte &= 63
 	if firstByte < 1 || firstByte > 4 {
-		err = fmt.Errorf("Parse Length Out of Constraint")
-		return value, err
+		return value, fmt.Errorf("parse Length Out of Constraint")
 	}
 	*repeat = true
 	value = 16384 * firstByte
@@ -271,8 +268,7 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 				return bitString, err
 			}
 			if (pd.byteOffset + sizes) > uint64(len(pd.bytes)) {
-				err := fmt.Errorf("PER data out of range")
-				return bitString, err
+				return bitString, fmt.Errorf("per data out of range")
 			}
 			bitString.Bytes = pd.bytes[pd.byteOffset : pd.byteOffset+sizes]
 			pd.byteOffset += sizes
@@ -311,8 +307,7 @@ func (pd *perBitData) parseBitString(extensed bool, lowerBoundPtr *int64, upperB
 		}
 
 		if (pd.byteOffset + sizes) > uint64(len(pd.bytes)) {
-			err := fmt.Errorf("PER data out of range")
-			return bitString, err
+			return bitString, fmt.Errorf("per data out of range")
 		}
 		bitString.Bytes = append(bitString.Bytes, pd.bytes[pd.byteOffset:pd.byteOffset+sizes]...)
 		bitString.BitLength += rawLength
@@ -361,8 +356,7 @@ func (pd *perBitData) parseOctetString(extensed bool, lowerBoundPtr *int64, uppe
 				return octetString, err
 			}
 			if (int64(pd.byteOffset) + ub) > int64(len(pd.bytes)) {
-				err := fmt.Errorf("per data out of range")
-				return octetString, err
+				return octetString, fmt.Errorf("per data out of range")
 			}
 			octetString = pd.bytes[pd.byteOffset : pd.byteOffset+unsignedUB]
 			pd.byteOffset += uint64(ub)
@@ -393,8 +387,7 @@ func (pd *perBitData) parseOctetString(extensed bool, lowerBoundPtr *int64, uppe
 			return octetString, err
 		}
 		if (rawLength + pd.byteOffset) > uint64(len(pd.bytes)) {
-			err := fmt.Errorf("per data out of range ")
-			return octetString, err
+			return octetString, fmt.Errorf("per data out of range ")
 		}
 		octetString = append(octetString, pd.bytes[pd.byteOffset:pd.byteOffset+rawLength]...)
 		pd.byteOffset += rawLength
@@ -517,12 +510,12 @@ func (pd *perBitData) parseEnumerated(extensed bool, lowerBoundPtr *int64, upper
 	err error,
 ) {
 	if lowerBoundPtr == nil || upperBoundPtr == nil {
-		err = fmt.Errorf("ENUMERATED value constraint is error")
+		err = fmt.Errorf("enumerated value constraint is error")
 		return
 	}
 	lb, ub := *lowerBoundPtr, *upperBoundPtr
 	if lb < 0 || lb > ub {
-		err = fmt.Errorf("ENUMERATED value constraint is error")
+		err = fmt.Errorf("enumerated value constraint is error")
 		return
 	}
 
@@ -576,8 +569,7 @@ func (pd *perBitData) parseSequenceOf(sizeExtensed bool, params fieldParameters,
 			return sliceContent, err
 		}
 		if pd.byteOffset >= uint64(len(pd.bytes)) {
-			err := fmt.Errorf("per data out of range")
-			return sliceContent, err
+			return sliceContent, fmt.Errorf("per data out of range")
 		}
 		numElements = uint64(pd.bytes[pd.byteOffset])
 		pd.byteOffset++
@@ -600,11 +592,11 @@ func (pd *perBitData) parseSequenceOf(sizeExtensed bool, params fieldParameters,
 
 func (pd *perBitData) getChoiceIndex(extensed bool, upperBoundPtr *int64) (present int, err error) {
 	if extensed {
-		err = fmt.Errorf("Unsupport value of CHOICE type is in Extensed")
+		err = fmt.Errorf("unsupport value of CHOICE type is in Extensed")
 	} else if upperBoundPtr == nil {
-		err = fmt.Errorf("The upper bound of CHIOCE is missing")
+		err = fmt.Errorf("the upper bound of CHIOCE is missing")
 	} else if ub := *upperBoundPtr; ub < 0 {
-		err = fmt.Errorf("The upper bound of CHIOCE is negative")
+		err = fmt.Errorf("the upper bound of CHIOCE is negative")
 	} else if rawChoice, err1 := pd.parseConstraintValue(ub + 1); err1 != nil {
 		err = err1
 	} else {
@@ -623,9 +615,9 @@ func getReferenceFieldValue(v reflect.Value) (value int64, err error) {
 		if fieldType.Field(0).Name == "Present" {
 			present := int(v.Field(0).Int())
 			if present == 0 {
-				err = fmt.Errorf("ReferenceField Value present is 0(present's field number)")
+				err = fmt.Errorf("referenceField value present is 0 (present's field number)")
 			} else if present >= fieldType.NumField() {
-				err = fmt.Errorf("Present is bigger than number of struct field")
+				err = fmt.Errorf("present is bigger than number of struct field")
 			} else {
 				value, err = getReferenceFieldValue(v.Field(present))
 			}
@@ -633,7 +625,7 @@ func getReferenceFieldValue(v reflect.Value) (value int64, err error) {
 			value, err = getReferenceFieldValue(v.Field(0))
 		}
 	default:
-		err = fmt.Errorf("OpenType reference only support INTEGER")
+		err = fmt.Errorf("openType reference only support INTEGER")
 	}
 	return
 }
@@ -722,7 +714,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		v.Set(reflect.ValueOf(bitString))
 		return nil
 	case ObjectIdentifierType:
-		return fmt.Errorf("Unsupport ObjectIdenfier type")
+		return fmt.Errorf("unsupport ObjectIdenfier type")
 	case OctetStringType:
 		if octetString, err := pd.parseOctetString(sizeExtensible, params.sizeLowerBound, params.sizeUpperBound); err != nil {
 			return err
@@ -789,7 +781,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 			var present int = 0
 			if params.openType {
 				if params.referenceFieldValue == nil {
-					return fmt.Errorf("OpenType reference value is empty")
+					return fmt.Errorf("openType reference value is empty")
 				}
 				refValue := *params.referenceFieldValue
 
@@ -807,7 +799,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					perTrace(2, "OpenType reference value does not match any field")
 					return pd.parseOpenType(true, reflect.Value{}, fieldParameters{})
 				} else if present >= structType.NumField() {
-					return fmt.Errorf("OpenType Present is bigger than number of struct field")
+					return fmt.Errorf("openType Present is bigger than number of struct field")
 				} else {
 					val.Field(0).SetInt(int64(present))
 					perTrace(2, fmt.Sprintf("Decoded Present index of OpenType is %d ", present))
@@ -821,9 +813,9 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 				}
 				val.Field(0).SetInt(int64(present))
 				if present == 0 {
-					return fmt.Errorf("CHOICE present is 0(present's field number)")
+					return fmt.Errorf("choice present is 0 (present's field number)")
 				} else if present >= structType.NumField() {
-					return fmt.Errorf("CHOICE Present is bigger than number of struct field")
+					return fmt.Errorf("choice present is bigger than number of struct field")
 				} else {
 					return parseField(val.Field(present), pd, structParams[present])
 				}
@@ -850,7 +842,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 					}
 				}
 				if index == i {
-					return fmt.Errorf("Open type is not reference to the other field in the struct")
+					return fmt.Errorf("open type is not reference to the other field in the struct")
 				}
 				structParams[i].referenceFieldValue = new(int64)
 				if referenceFieldValue, err := getReferenceFieldValue(val.Field(index)); err != nil {
