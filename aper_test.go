@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/omec-project/aper/logger"
+	"github.com/stretchr/testify/assert"
 )
 
 var perTestTraceLevel = 2
@@ -936,6 +937,10 @@ func TestOpenType(t *testing.T) {
 		perTestTrace(1, "[FAIL]\n")
 		t.Errorf("TEST %d is FAILED", i+1)
 	}
+	var x openTypeTest1
+	err := Unmarshal([]byte{0x11, 0x08, 0x06, 0x88, 0xFE, 0x06, 0xEC, 0x00, 0x05, 0xD8}, &x)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, x.Value.Present)
 }
 
 // BOOLEAN TEST

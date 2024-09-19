@@ -693,7 +693,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 		// pass tag for optional
 		for i := 0; i < structType.NumField(); i++ {
 			if structType.Field(i).PkgPath != "" {
-				return fmt.Errorf("struct contains unexported fields : " + structType.Field(i).PkgPath)
+				return fmt.Errorf("struct contains unexported fields : %s", structType.Field(i).PkgPath)
 			}
 			tempParams := parseFieldParameters(structType.Field(i).Tag.Get("aper"))
 			if sequenceType {
@@ -794,7 +794,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 			params.sizeUpperBound)
 		return err
 	}
-	return fmt.Errorf("unsupported: " + v.Type().String())
+	return fmt.Errorf("unsupported: %s", v.Type().String())
 }
 
 // Marshal returns the ASN.1 encoding of val.
