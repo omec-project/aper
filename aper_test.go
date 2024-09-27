@@ -18,7 +18,7 @@ var perTestTraceLevel = 2
 
 func perTestTrace(level int, s string) {
 	if level <= perTestTraceLevel {
-		logger.AperLog.Traceln(s)
+		logger.AperLog.Debugln(s)
 	}
 }
 
