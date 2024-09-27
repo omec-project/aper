@@ -1,48 +1,55 @@
 // Copyright 2019 Communication Service/Software Laboratory, National Chiao Tung University (free5gc.org)
+// SPDX-FileCopyrightText: 2024 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
 package logger
 
 import (
-	"time"
-
-	formatter "github.com/antonfisher/nested-logrus-formatter"
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-var log *logrus.Logger
-
-// AperLog : Log entry of aper
-var AperLog *logrus.Entry
+var (
+	log         *zap.Logger
+	AperLog     *zap.SugaredLogger
+	atomicLevel zap.AtomicLevel
+)
 
 func init() {
-	log = logrus.New()
-	log.SetReportCaller(false)
-
-	log.Formatter = &formatter.Formatter{
-		TimestampFormat: time.RFC3339,
-		TrimMessages:    true,
-		NoFieldsSpace:   true,
-		HideKeys:        true,
-		FieldsOrder:     []string{"component", "category"},
+	atomicLevel = zap.NewAtomicLevelAt(zap.InfoLevel)
+	config := zap.Config{
+		Level:            atomicLevel,
+		Development:      false,
+		Encoding:         "console",
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
 	}
 
-	AperLog = log.WithFields(logrus.Fields{"component": "LIB", "category": "Aper"})
+	config.EncoderConfig.TimeKey = "timestamp"
+	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	config.EncoderConfig.LevelKey = "level"
+	config.EncoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	config.EncoderConfig.CallerKey = "caller"
+	config.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+	config.EncoderConfig.MessageKey = "message"
+
+	var err error
+	log, err = config.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	AperLog = log.Sugar().With("component", "LIB", "category", "Aper")
 }
 
-func GetLogger() *logrus.Logger {
+func GetLogger() *zap.Logger {
 	return log
 }
 
-// SetLogLevel : set the log level (panic|fatal|error|warn|info|debug|trace)
-func SetLogLevel(level logrus.Level) {
-	AperLog.Infoln("set log level :", level)
-	log.SetLevel(level)
-}
-
-// SetReportCaller : Set whether shows the filePath and functionName on loggers
-func SetReportCaller(enable bool) {
-	AperLog.Infoln("set report call :", enable)
-	log.SetReportCaller(enable)
+// SetLogLevel: set the log level (panic|fatal|error|warn|info|debug)
+func SetLogLevel(level zapcore.Level) {
+	AperLog.Infoln("set log level:", level)
+	atomicLevel.SetLevel(level)
 }
