@@ -683,7 +683,7 @@ func (pd *perRawBitData) makeField(v reflect.Value, params fieldParameters) erro
 				return err
 			}
 		}
-		sequenceType = (structType.NumField() <= 0 || structType.Field(0).Name != "Present")
+		sequenceType = (structType.NumField() <= 0 || structType.Field(0).Name != PRESENT)
 		// pass tag for optional
 		for i := 0; i < structType.NumField(); i++ {
 			if structType.Field(i).PkgPath != "" {
