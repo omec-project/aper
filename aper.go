@@ -13,6 +13,10 @@ import (
 	"github.com/omec-project/aper/logger"
 )
 
+const (
+	PRESENT = "Present"
+)
+
 type perBitData struct {
 	bytes      []byte
 	byteOffset uint64
@@ -61,26 +65,6 @@ func GetBitString(srcBytes []byte, bitsOffset uint, numBits uint) (dstBytes []by
 	dstBytes[numBitsByteLen-1] &= numBitsMask
 	return
 }
-
-// GetFewBits is to get Value with desire few bits from source byte with bit offset
-// func GetFewBits(srcByte byte, bitsOffset uint, numBits uint) (value uint64, err error) {
-
-// 	if numBits == 0 {
-// 		value = 0
-// 		return
-// 	}
-// 	bitsLeft := 8 - bitsOffset
-// 	if bitsLeft < numBits {
-// 		err = fmt.Errorf("get bits overflow, requireBits: %d, leftBits: %d", numBits, bitsLeft)
-// 		return
-// 	}
-// 	if bitsOffset == 0 {
-// 		value = uint64(srcByte >> (8 - numBits))
-// 	} else {
-// 		value = uint64((srcByte << bitsOffset) >> (8 - numBits))
-// 	}
-// 	return
-// }
 
 // GetBitsValue is to get Value with desire bits from source byte array with bit offset
 func GetBitsValue(srcBytes []byte, bitsOffset uint, numBits uint) (value uint64, err error) {
@@ -612,7 +596,7 @@ func getReferenceFieldValue(v reflect.Value) (value int64, err error) {
 	case reflect.Int, reflect.Int32, reflect.Int64:
 		value = v.Int()
 	case reflect.Struct:
-		if fieldType.Field(0).Name == "Present" {
+		if fieldType.Field(0).Name == PRESENT {
 			present := int(v.Field(0).Int())
 			if present == 0 {
 				err = fmt.Errorf("referenceField value present is 0 (present's field number)")
@@ -777,7 +761,7 @@ func parseField(v reflect.Value, pd *perBitData, params fieldParameters) error {
 		}
 
 		// CHOICE or OpenType
-		if structType.NumField() > 0 && structType.Field(0).Name == "Present" {
+		if structType.NumField() > 0 && structType.Field(0).Name == PRESENT {
 			var present int = 0
 			if params.openType {
 				if params.referenceFieldValue == nil {
