@@ -40,4 +40,3 @@ jobs:
     uses: omec-project/.github/.github/workflows/unit-test.yml@main
     with:
       branch_name: ${{ github.ref }}
-        
